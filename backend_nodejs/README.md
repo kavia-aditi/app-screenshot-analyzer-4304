@@ -38,19 +38,6 @@ Server starts on `http://localhost:PORT` (default `4000`).
       "timestamp": "<ISO8601>"
     }
 
-- POST /chat
-  - Purpose: Example chat endpoint with mocked logic to demonstrate backend-to-frontend flow.
-  - Request (application/json):
-    {
-      "message": "What is AI?"
-    }
-  - Response (200):
-    {
-      "reply": "AI stands for Artificial Intelligence."
-    }
-  - Errors:
-    - 400: when "message" is missing or not a non-empty string
-
 ## Project Structure
 
 - src/
