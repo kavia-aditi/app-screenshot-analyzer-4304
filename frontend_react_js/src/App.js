@@ -478,7 +478,6 @@ function App() {
           <section
             style={styles.card}
             aria-labelledby="topic-heading"
-            role="region"
           >
             <h3 id="topic-heading" style={styles.sectionTitle}>
               Pick a topic
@@ -515,7 +514,6 @@ function App() {
           <section
             style={styles.card}
             aria-labelledby="quiz-heading"
-            role="region"
           >
             <h3
               id="quiz-heading"
@@ -549,7 +547,6 @@ function App() {
           <section
             style={styles.card}
             aria-labelledby="chat-heading"
-            role="region"
           >
             <h3
               id="chat-heading"
