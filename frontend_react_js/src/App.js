@@ -165,59 +165,6 @@ const styles = {
     cursor: 'pointer',
     transition: 'transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
   },
-  // NEW: styles for chat area presentation
-  chatArea: {
-    marginTop: '12px',
-    borderTop: '1px solid var(--stroke, #E5E7EB)',
-    paddingTop: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  chatMsgUser: {
-    alignSelf: 'flex-end',
-    background: 'var(--brand, #2563EB)',
-    color: '#fff',
-    padding: '8px 12px',
-    borderRadius: '12px',
-    maxWidth: '80%',
-  },
-  chatMsgBot: {
-    alignSelf: 'flex-start',
-    background: 'var(--surface-muted, #F3F4F6)',
-    color: 'var(--text-default, #1F2937)',
-    padding: '8px 12px',
-    border: '1px solid var(--stroke, #E5E7EB)',
-    borderRadius: '12px',
-    maxWidth: '80%',
-  },
-  chatRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginTop: '12px',
-  },
-  sendBtn: {
-    height: '46px',
-    padding: '0 14px',
-    borderRadius: '12px',
-    border: '1px solid var(--stroke, #E5E7EB)',
-    background: 'var(--surface, #FFFFFF)',
-    cursor: 'pointer',
-    fontWeight: 600,
-  },
-  helperText: {
-    fontFamily: '"Helvetica Neue", Arial, sans-serif',
-    fontSize: '13px',
-    color: 'var(--text-muted, #6B7280)',
-    marginTop: '8px',
-  },
-  errorText: {
-    fontFamily: '"Helvetica Neue", Arial, sans-serif',
-    fontSize: '13px',
-    color: '#DC2626',
-    marginTop: '6px',
-  },
 };
 
 /**
@@ -255,13 +202,6 @@ function App() {
     message: 'Checking backend…',
     timestamp: null,
   });
-
-  // NEW: chat state
-  // Keeps the current input value, a list of messages, and request state flags.
-  const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState([]); // [{role: 'user'|'assistant', content: string}]
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatError, setChatError] = useState('');
 
   // Apply theme to the document element for CSS variables in App.css
   useEffect(() => {
@@ -341,79 +281,6 @@ function App() {
   };
 
   const topics = ['History', 'Science', 'Art'];
-
-  // PUBLIC_INTERFACE
-  async function sendMessage() {
-    /**
-     * Sends the current chatInput to the backend POST /chat endpoint and appends
-     * both the user message and the assistant reply into the messages array.
-     *
-     * Behavior:
-     * - Validates non-empty input
-     * - Shows loading state and clears previous error
-     * - Reads API base from REACT_APP_API_BASE (must be set in .env)
-     * - POSTs JSON: { message: "<user text>" }
-     * - On 200 OK, expects { reply: "<assistant text>" }
-     * - On error, sets chatError for UI display
-     */
-    const text = chatInput.trim();
-    if (!text) return;
-
-    const base = process.env.REACT_APP_API_BASE;
-    if (!base) {
-      setChatError('REACT_APP_API_BASE is not set. Please configure .env and restart the app.');
-      return;
-    }
-
-    // Prepare optimistic UI update: show user's message immediately
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setChatLoading(true);
-    setChatError('');
-    setChatInput(''); // clear input field for better UX
-
-    // Build request with timeout and proper headers
-    const controller = new AbortController();
-    const url = `${base.replace(/\/+$/, '')}/chat`;
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: text }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // Revert or show error; keep the user message already appended
-        const reason =
-          data?.error ||
-          `Request failed with status ${res.status}`;
-        throw new Error(reason);
-      }
-
-      const reply = typeof data?.reply === 'string' ? data.reply : '(No reply received)';
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
-    } catch (err) {
-      setChatError(err?.message || 'Failed to send message');
-    } finally {
-      clearTimeout(timeout);
-      setChatLoading(false);
-    }
-  }
-
-  function handleInputKeyDown(e) {
-    // Submit on Enter (without Shift) for quick chat interactions
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!chatLoading) {
-        sendMessage();
-      }
-    }
-  }
 
   return (
     <div className="App" style={styles.page}>
@@ -557,22 +424,12 @@ function App() {
             >
               Chat with Einstein
             </h3>
-
-            {/* Chat input row with send button */}
-            <div style={styles.chatRow}>
+            <div style={{ marginTop: '12px' }}>
               <input
                 type="text"
                 aria-label="Ask a question"
                 placeholder="Ask a question"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                disabled={chatLoading}
-                style={{
-                  ...styles.input,
-                  flex: 1,
-                  opacity: chatLoading ? 0.9 : 1,
-                }}
+                style={styles.input}
                 onFocus={(e) => {
                   e.currentTarget.style.boxShadow = '0 0 0 3px var(--focus, #93C5FD)';
                   e.currentTarget.style.borderColor = 'var(--brand, #2563EB)';
@@ -582,59 +439,6 @@ function App() {
                   e.currentTarget.style.borderColor = 'var(--stroke, #E5E7EB)';
                 }}
               />
-              <button
-                type="button"
-                onClick={sendMessage}
-                disabled={chatLoading || !chatInput.trim()}
-                style={{
-                  ...styles.sendBtn,
-                  opacity: chatLoading || !chatInput.trim() ? 0.6 : 1,
-                }}
-                aria-label="Send message"
-                onMouseEnter={(e) => {
-                  if (!(chatLoading || !chatInput.trim())) {
-                    e.currentTarget.style.background = 'var(--surface-muted, #F3F4F6)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--surface, #FFFFFF)';
-                }}
-              >
-                {chatLoading ? 'Sending…' : 'Send'}
-              </button>
-            </div>
-
-            {/* Helper text for users */}
-            <div style={styles.helperText}>
-              Press Enter to send. Messages are sent to POST /chat.
-            </div>
-
-            {/* Error state */}
-            {chatError ? (
-              <div role="alert" style={styles.errorText}>
-                {chatError}
-              </div>
-            ) : null}
-
-            {/* Chat messages area */}
-            <div style={styles.chatArea} aria-live="polite">
-              {messages.length === 0 && !chatLoading ? (
-                <div style={styles.helperText}>No messages yet. Ask something like “What is AI?”</div>
-              ) : null}
-
-              {messages.map((m, idx) => (
-                <div
-                  key={`${m.role}-${idx}-${m.content.slice(0, 8)}`}
-                  style={m.role === 'user' ? styles.chatMsgUser : styles.chatMsgBot}
-                >
-                  {m.content}
-                </div>
-              ))}
-
-              {/* Loading placeholder for assistant while waiting */}
-              {chatLoading ? (
-                <div style={styles.chatMsgBot}>Thinking…</div>
-              ) : null}
             </div>
           </section>
         </div>
