@@ -195,79 +195,10 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [selectedTopic, setSelectedTopic] = useState('');
 
-  // NEW: simple backend health status state for display
-  const [backendStatus, setBackendStatus] = useState({
-    loading: true,
-    ok: false,
-    message: 'Checking backend…',
-    timestamp: null,
-  });
-
   // Apply theme to the document element for CSS variables in App.css
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
-  // NEW: On mount, call the backend /health endpoint using env-based API base.
-  useEffect(() => {
-    // Read the base URL from the CRA environment variable. See .env.example.
-    const base = process.env.REACT_APP_API_BASE;
-    if (!base) {
-      // If not configured, inform the user in UI to set REACT_APP_API_BASE.
-      setBackendStatus({
-        loading: false,
-        ok: false,
-        message:
-          'REACT_APP_API_BASE is not set. Create .env from .env.example and restart dev server.',
-        timestamp: null,
-      });
-      return;
-    }
-
-    const controller = new AbortController();
-    const url = `${base.replace(/\/+$/, '')}/health`; // ensure no trailing slash duplicates
-
-    // Basic fetch with timeout handling
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    fetch(url, { signal: controller.signal })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          setBackendStatus({
-            loading: false,
-            ok: true,
-            message: data?.status ? `status: ${data.status}` : 'status: ok',
-            timestamp: data?.timestamp || new Date().toISOString(),
-          });
-        } else {
-          setBackendStatus({
-            loading: false,
-            ok: false,
-            message: `Backend responded with ${res.status}`,
-            timestamp: null,
-          });
-        }
-      })
-      .catch((err) => {
-        const aborted = err?.name === 'AbortError';
-        setBackendStatus({
-          loading: false,
-          ok: false,
-          message: aborted
-            ? 'Request to backend timed out.'
-            : `Failed to reach backend: ${err?.message || 'unknown error'}`,
-          timestamp: null,
-        });
-      })
-      .finally(() => clearTimeout(timeout));
-
-    // Cleanup abort on unmount
-    return () => {
-      clearTimeout(timeout);
-      controller.abort();
-    };
-  }, []);
 
   // PUBLIC_INTERFACE
   const toggleTheme = () => {
@@ -310,24 +241,6 @@ function App() {
         <header style={styles.header}>
           <h1 style={styles.h1}>Micro‑Learning AI Tutor</h1>
           <p style={styles.subtitle}>Learn any topic in 5-minute lessons</p>
-
-          {/* NEW: Backend health status indicator */}
-          <p
-            style={{
-              margin: 0,
-              marginTop: '6px',
-              fontFamily: '"Helvetica Neue", Arial, sans-serif',
-              fontSize: '13.5px',
-              color: backendStatus.ok ? '#16A34A' : '#DC2626', // green or red
-            }}
-            aria-live="polite"
-          >
-            {backendStatus.loading
-              ? 'Contacting backend…'
-              : backendStatus.ok
-              ? `Backend is reachable (${backendStatus.message})`
-              : `Backend unreachable: ${backendStatus.message}`}
-          </p>
         </header>
 
         {/* Illustration */}
